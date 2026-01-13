@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2022-2026 Contributors to the Eclipse Foundation
 #
 # This program and the accompanying materials are made available under the
 # terms of the Apache License, Version 2.0 which is available at
@@ -15,7 +15,7 @@
 # syntax=docker/dockerfile:1.2
 
 # Build stage, to create the executable
-FROM --platform=$TARGETPLATFORM ghcr.io/eclipse-velocitas/devcontainer-base-images/python:v0.4 AS builder
+FROM --platform=$TARGETPLATFORM ghcr.io/eclipse-velocitas/devcontainer-base-images/python:v0.4 as builder
 ARG TARGETARCH
 
 RUN apt-get update && apt-get install -y python3-dev
@@ -32,7 +32,7 @@ RUN /bin/bash -c 'set -ex && \
     pip3 install --no-cache-dir scons; \
     fi'
 
-RUN pip3 install --no-cache-dir pyinstaller==5.9.0 \
+RUN pip3 install --no-cache-dir pyinstaller==6.9 \
     && pip3 install --no-cache-dir patchelf==0.17.0.0 \
     && pip3 install --no-cache-dir staticx \
     && pip3 install --no-cache-dir -r ./workspace/app/requirements.txt \
@@ -40,25 +40,26 @@ RUN pip3 install --no-cache-dir pyinstaller==5.9.0 \
 
 WORKDIR /workspace
 
-RUN velocitas init
+RUN velocitas init -v
 
 WORKDIR /workspace/app
 
-RUN pyinstaller --clean -F -s src/main.py
+RUN pyinstaller --clean -F -s -p src src/main.py
 
 WORKDIR /workspace/app/dist
 
-RUN staticx --strip main run-exe
+RUN staticx main run-exe
 
 # Runner stage, to copy the executable
-FROM scratch AS runner
+FROM scratch
 
-COPY --from=builder ./workspace/app/dist/run-exe /app
+COPY --from=builder ./workspace/app/dist/run-exe /dist/
 
 WORKDIR /tmp
+WORKDIR /dist
 
-ENV PATH="/:$PATH"
+ENV PATH="/dist:$PATH"
 
 LABEL org.opencontainers.image.source="https://github.com/eclipse-velocitas/vehicle-app-python-template"
 
-CMD ["/app"]
+CMD ["./run-exe"]
