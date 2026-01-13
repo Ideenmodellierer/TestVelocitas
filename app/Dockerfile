@@ -32,6 +32,8 @@ RUN /bin/bash -c 'set -ex && \
     pip3 install --no-cache-dir scons; \
     fi'
 
+RUN pip3 install --no-cache-dir scons
+
 RUN pip3 install --no-cache-dir pyinstaller==6.9 \
     && pip3 install --no-cache-dir patchelf==0.17.0.0 \
     && pip3 install --no-cache-dir staticx \
